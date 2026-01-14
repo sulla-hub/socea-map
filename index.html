@@ -1,68 +1,100 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SOCEA Map</title>
+    <title>SOCEA Official Coordination Map</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries.geo.json"></script>
     <style>
-        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
-        #map { height: 100vh; width: 100%; background: #cce1f2; }
-        .header-box { 
-            position: absolute; top: 10px; left: 50px; z-index: 1000; 
-            background: white; padding: 10px 20px; border-radius: 5px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3); border-left: 5px solid #003366;
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+        #map { height: 100vh; width: 100%; background: #cbdbe5; }
+        .map-logo { 
+            position: absolute; top: 15px; right: 15px; z-index: 1000; 
+            background: rgba(255,255,255,0.9); padding: 10px; border-radius: 8px; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.2); border: 1px solid #003366;
         }
-        .legend { background: white; padding: 10px; line-height: 1.5; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
+        .legend { background: white; padding: 12px; line-height: 22px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2); font-size: 13px; }
+        .legend i { width: 14px; height: 14px; float: left; margin: 4px 8px 0 0; border-radius: 2px; }
     </style>
 </head>
 <body>
 
-    <div class="header-box">
-        <h2 style="margin:0; color:#003366;">SOCEA</h2>
-        <small>Regional Air Navigation Safety Coordination</small>
+    <div class="map-logo">
+        <div style="font-weight: bold; color: #003366; font-size: 18px; letter-spacing: 1px;">SOCEA</div>
+        <div style="font-size: 10px; color: #666; text-transform: uppercase;">Regional ANSP Coordination</div>
     </div>
 
     <div id="map"></div>
 
     <script>
-        // 1. Initialize Map
-        var map = L.map('map').setView([42, 55], 4);
+        // Initialize Map centered on the SOCEA corridor
+        var map = L.map('map', {
+            center: [42, 55],
+            zoom: 4,
+            minZoom: 3
+        });
 
-        // 2. Base Layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-        // 3. Embedded GeoJSON - No external fetch needed
-        // I have added simplified squares for the members to ensure they show up immediately
-        var soceaData = {
-          "type": "FeatureCollection",
-          "features": [
-            { "type": "Feature", "properties": { "name": "Türkiye", "status": "Founder" }, "geometry": { "type": "Polygon", "coordinates": [[[26, 42], [45, 42], [45, 36], [26, 36], [26, 42]]] } },
-            { "type": "Feature", "properties": { "name": "Azerbaijan", "status": "Founder" }, "geometry": { "type": "Polygon", "coordinates": [[[44, 42], [51, 42], [51, 38], [44, 38], [44, 42]]] } },
-            { "type": "Feature", "properties": { "name": "Hungary", "status": "Member" }, "geometry": { "type": "Polygon", "coordinates": [[[16, 48], [23, 48], [23, 45], [16, 45], [16, 48]]] } },
-            { "type": "Feature", "properties": { "name": "Kazakhstan", "status": "Member" }, "geometry": { "type": "Polygon", "coordinates": [[[50, 55], [87, 55], [87, 40], [50, 40], [50, 55]]] } },
-            { "type": "Feature", "properties": { "name": "Uzbekistan", "status": "Member" }, "geometry": { "type": "Polygon", "coordinates": [[[56, 45], [73, 45], [73, 37], [56, 37], [56, 45]]] } }
-          ]
-        };
-
-        L.geoJSON(soceaData, {
-            style: function(feature) {
-                return {
-                    fillColor: feature.properties.status === 'Founder' ? '#003366' : '#3399ff',
-                    weight: 2, color: 'white', fillOpacity: 0.7
-                };
-            },
-            onEachFeature: function(feature, layer) {
-                layer.bindPopup("<b>" + feature.properties.name + "</b><br>Status: " + feature.properties.status);
-            }
+        // Use a high-reliability professional tile set
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; SOCEA 2026 | Map: OSM'
         }).addTo(map);
 
-        // 4. Legend
+        // Official SOCEA Membership Status (ISO-A3 Codes)
+        const soceaMembers = {
+            "TUR": { status: "Founder", ansp: "DHMİ", info: "Permanent Secretariat" },
+            "AZE": { status: "Founder", ansp: "AZANS", info: "Current Presidency" },
+            "KAZ": { status: "Member", ansp: "Kazaeronavigatsia", info: "Full Member" },
+            "UZB": { status: "Member", ansp: "Uzaeronavigation", info: "Full Member" },
+            "KGZ": { status: "Member", ansp: "Kyrgyzaeronavigatsia", info: "Full Member" },
+            "TJK": { status: "Member", ansp: "Tajikairnavigation", info: "Full Member" },
+            "HUN": { status: "Member", ansp: "HungaroControl", info: "Full Member" },
+            "BGR": { status: "Observer", ansp: "BULATSA", info: "Observer" }
+        };
+
+        function getStyle(feature) {
+            const member = soceaMembers[feature.id];
+            return {
+                fillColor: member ? (member.status === 'Founder' ? '#003366' : 
+                                    member.status === 'Member' ? '#3399ff' : '#f39c12') : 'transparent',
+                weight: member ? 1.5 : 0.5,
+                opacity: 1,
+                color: member ? 'white' : '#e0e0e0',
+                fillOpacity: member ? 0.75 : 0
+            };
+        }
+
+        // The 'countries' variable comes from the script loaded in the <head>
+        if (typeof countries !== 'undefined') {
+            L.geoJSON(countries, {
+                style: getStyle,
+                onEachFeature: function(feature, layer) {
+                    const member = soceaMembers[feature.id];
+                    if (member) {
+                        layer.bindPopup(`
+                            <div style="text-align:center;">
+                                <strong style="font-size:14px;">${feature.properties.name}</strong><br>
+                                <span style="color:#003366; font-weight:bold;">${member.ansp}</span><br>
+                                <hr style="margin:5px 0; border:0; border-top:1px solid #eee;">
+                                <small>${member.info}</small>
+                            </div>
+                        `);
+                        
+                        // Hover interactions
+                        layer.on('mouseover', function() { this.setStyle({ fillOpacity: 0.9, weight: 2.5 }); });
+                        layer.on('mouseout', function() { this.setStyle({ fillOpacity: 0.75, weight: 1.5 }); });
+                    }
+                }
+            }).addTo(map);
+        }
+
+        // Add Legend
         var legend = L.control({position: 'bottomright'});
         legend.onAdd = function (map) {
             var div = L.DomUtil.create('div', 'legend');
-            div.innerHTML = '<b>Legend</b><br>' +
-                            '<i style="background: #003366; width:12px; height:12px; display:inline-block"></i> Founder<br>' +
-                            '<i style="background: #3399ff; width:12px; height:12px; display:inline-block"></i> Member';
+            div.innerHTML = '<strong>SOCEA Membership</strong><br>' +
+                            '<i style="background: #003366"></i> Founding Member<br>' +
+                            '<i style="background: #3399ff"></i> Full Member<br>' +
+                            '<i style="background: #f39c12"></i> Observer State';
             return div;
         };
         legend.addTo(map);
