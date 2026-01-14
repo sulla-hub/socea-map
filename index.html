@@ -1,73 +1,107 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SOCEA Map - Diagnostic Mode</title>
+    <title>SOCEA Official Member Map</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
     
     <script src="countries.js"></script>
 
     <style>
-        body { margin: 0; padding: 0; font-family: sans-serif; }
-        #map { height: 100vh; width: 100%; background: #e0e0e0; }
-        #status-log { 
-            position: absolute; bottom: 20px; left: 20px; z-index: 2000; 
-            background: rgba(0,0,0,0.8); color: #00ff00; padding: 15px; 
-            font-family: monospace; font-size: 12px; border-radius: 5px;
-            max-width: 400px;
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        #map { height: 100vh; width: 100%; background: #f0f2f5; }
+        
+        /* SOCEA Official Branding */
+        .map-logo {
+            position: absolute; top: 20px; right: 20px; z-index: 1000;
+            background: white; padding: 10px; border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: 1px solid #003366;
         }
+        .map-header {
+            position: absolute; top: 20px; left: 60px; z-index: 1000;
+            background: white; padding: 15px 25px; border-radius: 4px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15); border-left: 6px solid #003366;
+        }
+        .legend { background: white; padding: 12px; line-height: 22px; border-radius: 4px; box-shadow: 0 0 10px rgba(0,0,0,0.1); font-size: 13px; }
+        .legend i { width: 14px; height: 14px; float: left; margin: 4px 8px 0 0; border-radius: 2px; }
     </style>
 </head>
 <body>
 
-    <div id="status-log">
-        <b>System Status:</b><br>
-        <span id="leaflet-check">Checking Leaflet...</span><br>
-        <span id="data-check">Checking countries.js...</span><br>
-        <span id="map-check">Initializing Map...</span>
+    <div class="map-logo">
+        <img src="https://via.placeholder.com/150x50?text=SOCEA+OFFICIAL" width="140" alt="SOCEA Logo">
+    </div>
+
+    <div class="map-header">
+        <strong style="font-size: 22px; color: #003366;">SOCEA</strong><br>
+        <span style="font-size: 11px; color: #666; font-weight: bold; text-transform: uppercase;">Regional ANSP Coordination Platform</span>
     </div>
 
     <div id="map"></div>
 
     <script>
-        // 1. Check if Leaflet loaded
-        if (typeof L !== 'undefined') {
-            document.getElementById('leaflet-check').innerHTML = "✅ Leaflet Engine: LOADED";
-        } else {
-            document.getElementById('leaflet-check').innerHTML = "❌ Leaflet Engine: FAILED (Blocked by firewall?)";
-        }
+        // 1. Initialize Map
+        var map = L.map('map').setView([42, 50], 4);
 
-        // 2. Check if countries.js loaded
+        // 2. Add Base Layer (Clean Light Theme)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: 'SOCEA 2026'
+        }).addTo(map);
+
+        // 3. Define Members (Matching your file's naming exactly)
+        const soceaMembers = {
+            "Turkey": { status: "Founder", ansp: "DHMİ" },
+            "Azerbaijan": { status: "Founder", ansp: "AZANS" },
+            "Kazakhstan": { status: "Member", ansp: "Kazaeronavigatsia" },
+            "Uzbekistan": { status: "Member", ansp: "Uzaeronavigation" },
+            "Kyrgyzstan": { status: "Member", ansp: "Kyrgyzaeronavigatsia" },
+            "Tajikistan": { status: "Member", ansp: "Tajikairnavigation" },
+            "Hungary": { status: "Member", ansp: "HungaroControl" },
+            "Bulgaria": { status: "Observer", ansp: "BULATSA" }
+        };
+
+        // 4. Draw Precise Borders
         if (typeof worldCountries !== 'undefined') {
-            document.getElementById('data-check').innerHTML = "✅ countries.js data: FOUND";
-        } else {
-            document.getElementById('data-check').innerHTML = "❌ countries.js data: NOT FOUND (Check filename/variable)";
-        }
-
-        try {
-            var map = L.map('map').setView([42, 55], 4);
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            document.getElementById('map-check').innerHTML = "✅ Map initialized successfully.";
-
-            const socea = {"TUR":"Founder", "AZE":"Founder", "KAZ":"Member", "UZB":"Member", "KGZ":"Member", "TJK":"Member", "HUN":"Member", "BGR":"Observer"};
-
-            if (typeof worldCountries !== 'undefined') {
-                L.geoJSON(worldCountries, {
-                    style: function(f) {
-                        var m = socea[f.id || f.properties.ISO_A3];
-                        return {
-                            fillColor: m === 'Founder' ? '#003366' : m === 'Member' ? '#3399ff' : m === 'Observer' ? '#f39c12' : 'transparent',
-                            weight: m ? 1.5 : 0,
-                            color: 'white',
-                            fillOpacity: m ? 0.8 : 0
-                        };
+            L.geoJSON(worldCountries, {
+                style: function(feature) {
+                    // This checks the 'name' property you found in your file
+                    var countryName = feature.properties.name;
+                    var member = soceaMembers[countryName];
+                    
+                    return {
+                        fillColor: member ? (member.status === 'Founder' ? '#003366' : 
+                                            member.status === 'Member' ? '#3399ff' : '#f39c12') : 'transparent',
+                        weight: member ? 1.5 : 0.2,
+                        opacity: 1,
+                        color: member ? 'white' : '#d1d1d1',
+                        fillOpacity: member ? 0.75 : 0
+                    };
+                },
+                onEachFeature: function(feature, layer) {
+                    var countryName = feature.properties.name;
+                    var member = soceaMembers[countryName];
+                    
+                    if (member) {
+                        layer.bindPopup("<b>" + countryName + "</b><br>ANSP: " + member.ansp + "<br>Status: " + member.status);
+                        
+                        layer.on('mouseover', function() { this.setStyle({ fillOpacity: 0.9 }); });
+                        layer.on('mouseout', function() { this.setStyle({ fillOpacity: 0.75 }); });
                     }
-                }).addTo(map);
-            }
-        } catch (e) {
-            document.getElementById('map-check').innerHTML = "❌ Map Error: " + e.message;
+                }
+            }).addTo(map);
         }
+
+        // 5. Add Legend
+        var legend = L.control({position: 'bottomright'});
+        legend.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'legend');
+            div.innerHTML = '<strong>SOCEA Status</strong><br>' +
+                            '<i style="background: #003366"></i> Founding Member<br>' +
+                            '<i style="background: #3399ff"></i> Full Member<br>' +
+                            '<i style="background: #f39c12"></i> Observer State';
+            return div;
+        };
+        legend.addTo(map);
     </script>
 </body>
 </html>
