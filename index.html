@@ -4,112 +4,72 @@
     <title>SOCEA Member Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries.geo.json"></script>
+
     <style>
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         #map { height: 100vh; width: 100%; }
-
-        /* Style for the Logo */
-        .map-logo {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 1000;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.2);
-        }
-        .map-logo img { width: 150px; height: auto; }
-
-        /* Style for the Legend */
-        .legend {
-            background: white;
-            padding: 15px;
-            line-height: 24px;
-            color: #333;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.2);
-        }
-        .legend i {
-            width: 18px;
-            height: 18px;
-            float: left;
-            margin-right: 10px;
-            opacity: 0.8;
-            border-radius: 3px;
-        }
+        .map-logo { position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; padding: 5px; border-radius: 5px; border: 1px solid #ccc; }
+        .legend { background: white; padding: 10px; line-height: 18px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
     <div class="map-logo">
-        <img src="https://socea.org/assets/images/logo/socea-logo.svg" alt="SOCEA Logo">
+        <img src="https://via.placeholder.com/120x40?text=SOCEA+LOGO" width="120">
     </div>
 
     <div id="map"></div>
 
     <script>
-        // 1. Initialize Map
-        var map = L.map('map').setView([45, 50], 4);
+        var map = L.map('map').setView([42, 55], 3.5);
 
-        // 2. Add a clean, professional base layer (CartoDB Positron)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap'
-        }).addTo(map);
+        // Professional light tiles
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        // 3. SOCEA Member Data
-        const soceaMembers = {
-            "TUR": { status: "Founder", name: "Türkiye (DHMİ)" },
-            "AZE": { status: "Founder", name: "Azerbaijan (AZANS)" },
-            "KAZ": { status: "Member", name: "Kazakhstan (Kazaeronavigatsia)" },
-            "UZB": { status: "Member", name: "Uzbekistan (Uzaeronavigation)" },
-            "KGZ": { status: "Member", name: "Kyrgyzstan (Kyrgyzaeronavigatsia)" },
-            "TJK": { status: "Member", name: "Tajikistan (Tajikairnavigation)" },
-            "HUN": { status: "Member", name: "Hungary (HungaroControl)" },
-            "BGR": { status: "Observer", name: "Bulgaria (BULATSA)" }
+        // SOCEA Membership Data
+        const socea = {
+            "TUR": "Founder", "AZE": "Founder", 
+            "KAZ": "Member", "UZB": "Member", 
+            "KGZ": "Member", "TJK": "Member", 
+            "HUN": "Member", "BGR": "Observer"
         };
 
-        function getColor(status) {
-            return status === 'Founder' ? '#003366' : 
-                   status === 'Member'  ? '#3399ff' : 
-                   status === 'Observer' ? '#f39c12' : '#f0f0f0';
-        }
+        // 3. Instead of "fetch", we use the variable we loaded in the <head>
+        L.geoJSON(countries, {
+            style: function(feature) {
+                var status = socea[feature.id];
+                return {
+                    fillColor: status === 'Founder' ? '#003366' : 
+                               status === 'Member'  ? '#3399ff' : 
+                               status === 'Observer' ? '#f39c12' : 'transparent',
+                    weight: status ? 1.5 : 0.5,
+                    opacity: 1,
+                    color: status ? 'white' : '#ddd',
+                    fillOpacity: status ? 0.7 : 0
+                };
+            },
+            onEachFeature: function(feature, layer) {
+                var status = socea[feature.id];
+                if (status) {
+                    layer.bindPopup("<b>" + feature.properties.name + "</b><br>Status: " + status);
+                }
+            }
+        }).addTo(map);
 
-        // 4. Load Borders and Apply Logic
-        fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
-            .then(res => res.json())
-            .then(data => {
-                L.geoJson(data, {
-                    style: function(feature) {
-                        const member = soceaMembers[feature.id];
-                        return {
-                            fillColor: getColor(member ? member.status : null),
-                            weight: 1.5,
-                            opacity: 1,
-                            color: 'white',
-                            fillOpacity: member ? 0.7 : 0.2
-                        };
-                    },
-                    onEachFeature: function(feature, layer) {
-                        const member = soceaMembers[feature.id];
-                        if (member) {
-                            layer.bindPopup("<strong>" + member.name + "</strong><br>Status: " + member.status);
-                        }
-                    }
-                }).addTo(map);
-            });
-
-        // 5. Add Legend to the Map
+        // 4. Add the Legend
         var legend = L.control({position: 'bottomright'});
         legend.onAdd = function (map) {
             var div = L.DomUtil.create('div', 'legend');
             div.innerHTML += '<b>SOCEA Status</b><br>';
-            div.innerHTML += '<i style="background: #003366"></i> Founding Member<br>';
-            div.innerHTML += '<i style="background: #3399ff"></i> Full Member<br>';
-            div.innerHTML += '<i style="background: #f39c12"></i> Observer<br>';
+            div.innerHTML += '<i style="background: #003366; width:12px; height:12px; display:inline-block"></i> Founding Member<br>';
+            div.innerHTML += '<i style="background: #3399ff; width:12px; height:12px; display:inline-block"></i> Full Member<br>';
+            div.innerHTML += '<i style="background: #f39c12; width:12px; height:12px; display:inline-block"></i> Observer<br>';
             return div;
         };
         legend.addTo(map);
+
     </script>
 </body>
 </html>
