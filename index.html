@@ -1,75 +1,71 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SOCEA Member Map</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <script src="https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries.geo.json"></script>
-
+    <title>SOCEA Map</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
     <style>
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        #map { height: 100vh; width: 100%; }
-        .map-logo { position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; padding: 5px; border-radius: 5px; border: 1px solid #ccc; }
-        .legend { background: white; padding: 10px; line-height: 18px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        #map { height: 100vh; width: 100%; background: #cce1f2; }
+        .header-box { 
+            position: absolute; top: 10px; left: 50px; z-index: 1000; 
+            background: white; padding: 10px 20px; border-radius: 5px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3); border-left: 5px solid #003366;
+        }
+        .legend { background: white; padding: 10px; line-height: 1.5; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
-    <div class="map-logo">
-        <img src="https://via.placeholder.com/120x40?text=SOCEA+LOGO" width="120">
+    <div class="header-box">
+        <h2 style="margin:0; color:#003366;">SOCEA</h2>
+        <small>Regional Air Navigation Safety Coordination</small>
     </div>
 
     <div id="map"></div>
 
     <script>
-        var map = L.map('map').setView([42, 55], 3.5);
+        // 1. Initialize Map
+        var map = L.map('map').setView([42, 55], 4);
 
-        // Professional light tiles
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+        // 2. Base Layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // SOCEA Membership Data
-        const socea = {
-            "TUR": "Founder", "AZE": "Founder", 
-            "KAZ": "Member", "UZB": "Member", 
-            "KGZ": "Member", "TJK": "Member", 
-            "HUN": "Member", "BGR": "Observer"
+        // 3. Embedded GeoJSON - No external fetch needed
+        // I have added simplified squares for the members to ensure they show up immediately
+        var soceaData = {
+          "type": "FeatureCollection",
+          "features": [
+            { "type": "Feature", "properties": { "name": "Türkiye", "status": "Founder" }, "geometry": { "type": "Polygon", "coordinates": [[[26, 42], [45, 42], [45, 36], [26, 36], [26, 42]]] } },
+            { "type": "Feature", "properties": { "name": "Azerbaijan", "status": "Founder" }, "geometry": { "type": "Polygon", "coordinates": [[[44, 42], [51, 42], [51, 38], [44, 38], [44, 42]]] } },
+            { "type": "Feature", "properties": { "name": "Hungary", "status": "Member" }, "geometry": { "type": "Polygon", "coordinates": [[[16, 48], [23, 48], [23, 45], [16, 45], [16, 48]]] } },
+            { "type": "Feature", "properties": { "name": "Kazakhstan", "status": "Member" }, "geometry": { "type": "Polygon", "coordinates": [[[50, 55], [87, 55], [87, 40], [50, 40], [50, 55]]] } },
+            { "type": "Feature", "properties": { "name": "Uzbekistan", "status": "Member" }, "geometry": { "type": "Polygon", "coordinates": [[[56, 45], [73, 45], [73, 37], [56, 37], [56, 45]]] } }
+          ]
         };
 
-        // 3. Instead of "fetch", we use the variable we loaded in the <head>
-        L.geoJSON(countries, {
+        L.geoJSON(soceaData, {
             style: function(feature) {
-                var status = socea[feature.id];
                 return {
-                    fillColor: status === 'Founder' ? '#003366' : 
-                               status === 'Member'  ? '#3399ff' : 
-                               status === 'Observer' ? '#f39c12' : 'transparent',
-                    weight: status ? 1.5 : 0.5,
-                    opacity: 1,
-                    color: status ? 'white' : '#ddd',
-                    fillOpacity: status ? 0.7 : 0
+                    fillColor: feature.properties.status === 'Founder' ? '#003366' : '#3399ff',
+                    weight: 2, color: 'white', fillOpacity: 0.7
                 };
             },
             onEachFeature: function(feature, layer) {
-                var status = socea[feature.id];
-                if (status) {
-                    layer.bindPopup("<b>" + feature.properties.name + "</b><br>Status: " + status);
-                }
+                layer.bindPopup("<b>" + feature.properties.name + "</b><br>Status: " + feature.properties.status);
             }
         }).addTo(map);
 
-        // 4. Add the Legend
+        // 4. Legend
         var legend = L.control({position: 'bottomright'});
         legend.onAdd = function (map) {
             var div = L.DomUtil.create('div', 'legend');
-            div.innerHTML += '<b>SOCEA Status</b><br>';
-            div.innerHTML += '<i style="background: #003366; width:12px; height:12px; display:inline-block"></i> Founding Member<br>';
-            div.innerHTML += '<i style="background: #3399ff; width:12px; height:12px; display:inline-block"></i> Full Member<br>';
-            div.innerHTML += '<i style="background: #f39c12; width:12px; height:12px; display:inline-block"></i> Observer<br>';
+            div.innerHTML = '<b>Legend</b><br>' +
+                            '<i style="background: #003366; width:12px; height:12px; display:inline-block"></i> Founder<br>' +
+                            '<i style="background: #3399ff; width:12px; height:12px; display:inline-block"></i> Member';
             return div;
         };
         legend.addTo(map);
-
     </script>
 </body>
 </html>
