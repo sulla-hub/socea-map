@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SOCEA Official Coordination Map</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="countries.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+        }
+
+        /* Map */
+        #map {
+            height: 100vh;
+            width: 100%;
+            background: #f2f2f2; /* neutral political background */
+        }
+
+        /* Logo */
+        .map-logo {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            border: 1px solid #003366;
+        }
+
+        .map-logo img {
+            width: 150px;
+            height: auto;
+            display: block;
+        }
+
+        /* Tooltip */
+        .socea-tooltip {
+            background: white;
+            color: #003366;
+            border: 1px solid #003366;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        /* Legend */
+        .legend {
+            background: white;
+            padding: 12px;
+            line-height: 22px;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            font-size: 13px;
+        }
+
+        .legend i {
+            width: 14px;
+            height: 14px;
+            float: left;
+            margin: 4px 8px 0 0;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Logo -->
+    <div class="map-logo">
+        <img src="https://socea.org/assets/images/logo/socea-logo.svg" alt="SOCEA Official Logo">
+    </div>
+
+    <div id="map"></div>
+
+    <script>
+        var map = L.map('map').setView([45, 70], 3);
+
+        L.tileLayer(
+            'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
+            { attribution: 'SOCEA 2026' }
+        ).addTo(map);
+
+        const soceaMembers = {
+            "Türkiye": { status: "Founder", ansp: "DHMİ" },
+            "Azerbaijan": { status: "Founder", ansp: "AZANS" },
+            "Kazakhstan": { status: "Member", ansp: "Kazaeronavigatsia" },
+            "Uzbekistan": { status: "Member", ansp: "Uzaeronavigation" },
+            "Kyrgyzstan": { status: "Member", ansp: "Kyrgyzaeronavigatsia" },
+            "Tajikistan": { status: "Member", ansp: "Tajikairnavigation" },
+            "Hungary": { status: "Member", ansp: "HungaroControl" },
+            "Bulgaria": { status: "Observer", ansp: "BULATSA" },
+            "Russia": { status: "Observer", ansp: "State ATM Corporation" },
+            "China": { status: "Observer", ansp: "ATMB" }
+        };
+
+        if (typeof worldCountries !== 'undefined') {
+            L.geoJSON(worldCountries, {
+                style: function (feature) {
+                    var name = feature.properties.name || feature.properties.NAME;
+                    var member = soceaMembers[name];
+
+                    return {
+                        fillColor: member
+                            ? (member.status === 'Founder' ? '#003366'
+                            : member.status === 'Member' ? '#3399ff'
+                            : '#f39c12')
+                            : 'transparent',
+                        weight: member ? 1.2 : 0,
+                        color: member ? '#ffffff' : 'transparent',
+                        fillOpacity: member ? 0.8 : 0
+                    };
+                },
+
+                onEachFeature: function (feature, layer) {
+                    var name = feature.properties.name || feature.properties.NAME;
+                    var member = soceaMembers[name];
+
+                    if (member) {
+
+                        /* Hover tooltip */
+                        layer.bindTooltip(
+                            "<div style='text-align:center;'>" +
+                            "<b>" + name + "</b><br>" +
+                            member.ansp + "<br>" +
+                            "<small>(" + member.status + ")</small>" +
+                            "</div>",
+                            {
+                                sticky: true,
+                                direction: 'auto',
+                                opacity: 0.95,
+                                className: 'socea-tooltip'
+                            }
+                        );
+
+                        /* Hover highlight */
+                        layer.on('mouseover', function () {
+                            this.setStyle({ fillOpacity: 0.95, weight: 2 });
+                        });
+
+                        layer.on('mouseout', function () {
+                            this.setStyle({ fillOpacity: 0.8, weight: 1.2 });
+                        });
+
+                        /* Click → zoom & center */
+                        layer.on('click', function () {
+                            map.fitBounds(this.getBounds(), {
+                                padding: [40, 40],
+                                maxZoom: 6,
+                                animate: true
+                            });
+                        });
+                    }
+                }
+            }).addTo(map);
+        }
+
+        /* Legend */
+        var legend = L.control({ position: 'bottomright' });
+        legend.onAdd = function () {
+            var div = L.DomUtil.create('div', 'legend');
+            div.innerHTML =
+                '<strong>SOCEA Network</strong><br>' +
+                '<i style="background:#003366"></i> Founding Member<br>' +
+                '<i style="background:#3399ff"></i> Full Member<br>' +
+                '<i style="background:#f39c12"></i> Observer State';
+            return div;
+        };
+        legend.addTo(map);
+    </script>
+
+</body>
+</html>
