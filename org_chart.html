@@ -38,20 +38,20 @@
     border-radius: 24px;
     padding: 24px;
     text-decoration: none;
-    transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     box-shadow: var(--shadow);
     display: flex;
     flex-direction: column;
-    align-items: center; 
+    align-items: center;
     justify-content: center;
-    text-align: center; 
+    text-align: center;
     position: relative;
     z-index: 2;
   }
 
   .card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    transform: translateY(-4px);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.12);
   }
 
   .title {
@@ -62,18 +62,79 @@
     letter-spacing: -0.5px;
   }
 
+  /* VERTICAL SPINE */
   .line-v {
     width: 2px;
-    height: 35px;
+    height: 40px;
     background: linear-gradient(to bottom, var(--socea-blue), var(--socea-green));
-    opacity: 0.3;
+    opacity: 0.35;
   }
 
-  /* PRESIDENCY */
+  /* ===== BRANCH SECTION WITH CONTINUOUS SPINE ===== */
+  .branch-container {
+    position: relative;
+    width: 100%;
+    min-height: 160px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* vertical line continues THROUGH the branch */
+  .branch-spine {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--socea-blue), var(--socea-green));
+    opacity: 0.35;
+  }
+
+  /* horizontal branch to secretariat */
+  .side-line {
+    position: absolute;
+    right: 50%;
+    width: 150px;
+    height: 2px;
+    background: rgba(26, 67, 136, 0.35);
+    z-index: 1;
+  }
+
+  .sec-card {
+    position: absolute;
+    right: calc(50% + 150px);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 200px;
+    padding: 15px;
+    background: var(--socea-blue);
+    border: 1px solid var(--socea-blue);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .sec-card:hover {
+    transform: translateY(-50%) translateY(-3px);
+  }
+
+  .sec-card .title {
+    color: #fff;
+    font-size: 1.1rem;
+  }
+
+  .sec-card:hover {
+    background: #fff;
+  }
+
+  .sec-card:hover .title {
+    color: var(--socea-blue);
+  }
+
   .pres-card {
     width: 400px;
     padding: 35px;
     border-top: 6px solid var(--socea-blue);
+    margin-bottom: 10px;
   }
 
   .pres-img {
@@ -93,21 +154,16 @@
     margin-top: 10px;
   }
 
-  /* SECRETARIAT */
-  .sec-card {
-    width: 340px;
-    background: var(--socea-blue);
-    border: 1px solid var(--socea-blue);
+  .ga-card {
+    width: 380px;
+    margin-top: 10px;
   }
-  .sec-card .title { color: #fff; }
-  .sec-card:hover { background: #fff; border-color: var(--socea-blue); }
-  .sec-card:hover .title { color: var(--socea-blue); }
 
-  /* GA & EXEC */
-  .ga-card { width: 380px; }
-  .exec-card { width: 420px; border-bottom: 5px solid var(--socea-green); }
+  .exec-card {
+    width: 420px;
+    border-bottom: 5px solid var(--socea-green);
+  }
 
-  /* WORKING GROUPS */
   .wg-container {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -129,21 +185,49 @@
 
   .wg-card {
     padding: 20px;
-    min-height: 90px; /* Reduced for better text centering ratio */
+    min-height: 90px;
     background: rgba(255, 255, 255, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
   }
-  .wg-card .title { font-size: 1.1rem; font-weight: 700; color: #444; }
-  .wg-card:hover .title { color: var(--socea-green); }
 
+  .wg-card .title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #444;
+  }
+
+  .wg-card:hover {
+    border-color: var(--socea-green);
+  }
+
+  .wg-card:hover .title {
+    color: var(--socea-green);
+  }
+
+  @media (max-width: 900px) {
+    .sec-card {
+      position: static;
+      transform: none;
+      width: 340px;
+      margin-bottom: 20px;
+    }
+    .branch-container {
+      flex-direction: column;
+      min-height: auto;
+    }
+    .branch-spine,
+    .side-line {
+      display: none;
+    }
+  }
 </style>
 </head>
-<body>
 
+<body>
 <div class="hierarchy-wrapper">
-  
+
   <div class="card pres-card">
     <div class="title">Presidency</div>
     <img src="president.jpg" class="pres-img" alt="President of SOCEA">
@@ -152,32 +236,33 @@
 
   <div class="line-v"></div>
 
-  <a href="/secretariat" class="card sec-card">
-    <div class="title">Secretariat</div>
-  </a>
+  <div class="branch-container">
+    <div class="branch-spine"></div>
+    <div class="side-line"></div>
+    <a href="secretariat.html" class="card sec-card">
+      <div class="title">Secretariat</div>
+    </a>
+  </div>
 
   <div class="line-v"></div>
 
-  <a href="/ga" class="card ga-card">
+  <a href="ga.html" class="card ga-card">
     <div class="title">General Assembly</div>
   </a>
 
   <div class="line-v"></div>
 
-  <a href="/exec" class="card exec-card">
+  <a href="exec.html" class="card exec-card">
     <div class="title">Executive Board</div>
   </a>
 
   <div class="wg-container">
     <div class="wg-bridge"></div>
-    <a href="/admin" class="card wg-card"><div class="title">Administrative<br>Working Group</div></a>
-    <a href="/tech" class="card wg-card"><div class="title">Technical<br>Working Group</div></a>
-    <a href="/ops" class="card wg-card"><div class="title">Operational<br>Working Group</div></a>
+    <a href="admin.html" class="card wg-card"><div class="title">Administrative<br>Working Group</div></a>
+    <a href="tech.html" class="card wg-card"><div class="title">Technical<br>Working Group</div></a>
+    <a href="ops.html" class="card wg-card"><div class="title">Operational<br>Working Group</div></a>
   </div>
 
 </div>
-
 </body>
-
 </html>
-
